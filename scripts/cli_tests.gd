@@ -2,7 +2,7 @@ extends SceneTree
 
 
 # 核心回归测试脚本。
-# 覆盖配置加载、策略 API 输出、确定性 seed、双模式、词缀、敌人进度和导出功能。
+# 覆盖配置加载、策略 API 输出、确定性 seed、双模式、道具随机加成、敌人进度和导出功能。
 const ConfigLoaderScript = preload("res://scripts/core/config_loader.gd")
 const BattleSimulatorScript = preload("res://scripts/core/battle_simulator.gd")
 const ResultExporterScript = preload("res://scripts/core/result_exporter.gd")
@@ -145,14 +145,14 @@ func _test_corrosion_uses_dot() -> void:
 
 
 func _test_random_affixes_are_recorded() -> void:
-	# 词缀既要出现在单局结果中，也要能被批量统计；固定 seed 下词缀也应可复现。
+	# 道具随机加成既要出现在单局结果中，也要能被批量统计；固定 seed 下加成也应可复现。
 	var simulator = _build_simulator()
 	var first: Dictionary = simulator.run_once(CritBurstStrategyScript.new(), "tick", 9090)
 	var second: Dictionary = simulator.run_once(CritBurstStrategyScript.new(), "tick", 9090)
 	var batch: Dictionary = simulator.run_batch(CritBurstStrategyScript.new(), "tick", 5)
-	_assert(first.get("affixes", []).size() == first.get("items", []).size(), "single result rolls one affix per chosen item")
-	_assert(str(first.get("affixes", [])) == str(second.get("affixes", [])), "same seed produces same affixes")
-	_assert(not batch.get("affix_counts", {}).is_empty(), "batch result includes affix counts")
+	_assert(first.get("affixes", []).size() == first.get("items", []).size(), "single result records one random bonus per chosen item")
+	_assert(str(first.get("affixes", [])) == str(second.get("affixes", [])), "same seed produces same random bonuses")
+	_assert(not batch.get("affix_counts", {}).is_empty(), "batch result includes random bonus counts")
 
 
 func _test_enemy_progress_is_recorded() -> void:

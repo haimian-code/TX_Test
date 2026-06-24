@@ -57,7 +57,7 @@ func _validate_config(config: Dictionary) -> String:
 		if not id_error.is_empty():
 			return id_error
 
-	# 词缀是扩展项，不是必填；如果配置了，同样要求数组和唯一 id。
+	# 道具随机加成是扩展项，不是必填；如果配置了，同样要求数组和唯一 id。
 	if config.has("affix_pool"):
 		if typeof(config["affix_pool"]) != TYPE_ARRAY:
 			return "Config key 'affix_pool' must be an array."

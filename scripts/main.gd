@@ -36,6 +36,9 @@ var enemy_hp_text: Label
 var enemy_progress_text: Label
 var mode_info_text: Label
 var replay_status_text: Label
+var batch_replay_spin: SpinBox
+var play_batch_button: Button
+var batch_summary_button: Button
 
 # 单局回放是异步播放的；token 用来在新模拟开始时取消旧回放。
 var replay_token := 0
@@ -74,7 +77,7 @@ func _build_ui() -> void:
 	strategy_option = OptionButton.new()
 	strategy_option.add_item("暴击爆发流", 0)
 	strategy_option.set_item_metadata(0, "crit_burst")
-	strategy_option.add_item("腐蚀持续流", 1)
+	strategy_option.add_item("情绪净化流", 1)
 	strategy_option.set_item_metadata(1, "corrosion")
 	controls.add_child(_labeled_control("流派策略", strategy_option))
 
@@ -114,6 +117,28 @@ func _build_ui() -> void:
 	export_button.text = "导出结果"
 	export_button.pressed.connect(_on_export_last)
 	controls.add_child(export_button)
+
+	var batch_replay_controls := HBoxContainer.new()
+	batch_replay_controls.add_theme_constant_override("separation", 10)
+	root.add_child(batch_replay_controls)
+
+	batch_replay_spin = SpinBox.new()
+	batch_replay_spin.min_value = 1
+	batch_replay_spin.max_value = 1
+	batch_replay_spin.step = 1
+	batch_replay_spin.value = 1
+	batch_replay_spin.custom_minimum_size.x = 96
+	batch_replay_controls.add_child(_labeled_control("批量回放场次", batch_replay_spin))
+
+	play_batch_button = Button.new()
+	play_batch_button.text = "播放场次"
+	play_batch_button.pressed.connect(_on_play_batch_run)
+	batch_replay_controls.add_child(play_batch_button)
+
+	batch_summary_button = Button.new()
+	batch_summary_button.text = "返回批量统计"
+	batch_summary_button.pressed.connect(_on_show_batch_summary)
+	batch_replay_controls.add_child(batch_summary_button)
 
 	# 顶部生命条显示单局回放的当前状态；批量/对比时显示代表性最终状态或等待态。
 	var bars := GridContainer.new()
@@ -210,6 +235,7 @@ func _reset_output() -> void:
 	replay_token += 1
 	last_result = {}
 	last_batch = {}
+	_set_batch_replay_controls(false, 1, 1)
 	player_hp_bar.max_value = 1.0
 	player_hp_bar.value = 0.0
 	enemy_hp_bar.max_value = 1.0
@@ -232,6 +258,7 @@ func _on_run_once() -> void:
 	var mode := _selected_mode()
 	last_result = simulator.run_once(strategy, mode)
 	last_batch = {}
+	_set_batch_replay_controls(false, 1, 1)
 	_show_single_result(last_result)
 
 
@@ -245,7 +272,7 @@ func _on_run_batch() -> void:
 	if not last_batch.get("results", []).is_empty():
 		# 详细日志和生命条默认使用最后一场；所有场次的最终结果会在表格中列出。
 		last_result = last_batch["results"][-1]
-	_show_batch_result(last_batch)
+	_show_batch_result(last_batch, last_batch.get("results", []).size())
 
 
 func _on_compare() -> void:
@@ -266,7 +293,29 @@ func _on_compare() -> void:
 	if not crit.get("results", []).is_empty():
 		# 对比时也保留一个 last_result，方便导出 CSV 时有单场曲线。
 		last_result = crit["results"][-1]
+	_set_batch_replay_controls(false, 1, 1)
 	_show_compare_result(crit, corrosion)
+
+
+func _on_play_batch_run() -> void:
+	if not _has_plain_batch_results():
+		status_label.text = "请先运行“批量模拟”，再选择要回放的场次。"
+		return
+	var results: Array = last_batch.get("results", [])
+	var run_number: int = clamp(int(batch_replay_spin.value), 1, results.size())
+	var result: Dictionary = results[run_number - 1]
+	last_result = result
+	_show_batch_replay_result(result, run_number, results.size())
+
+
+func _on_show_batch_summary() -> void:
+	if not _has_plain_batch_results():
+		status_label.text = "当前没有可返回的批量统计。"
+		return
+	if not last_batch.get("results", []).is_empty():
+		var results: Array = last_batch.get("results", [])
+		last_result = results[clamp(int(batch_replay_spin.value), 1, results.size()) - 1]
+		_show_batch_result(last_batch, int(batch_replay_spin.value))
 
 
 func _on_export_last() -> void:
@@ -315,7 +364,7 @@ func _display_strategy(strategy_id) -> String:
 		"crit_burst":
 			return "暴击爆发流"
 		"corrosion":
-			return "腐蚀持续流"
+			return "情绪净化流"
 		_:
 			return str(strategy_id)
 
@@ -351,7 +400,7 @@ func _show_single_result(result: Dictionary) -> void:
 	_update_mode_info(result.get("mode", ""))
 	_update_bars(result)
 	# 单局摘要展示最关键的结论，完整过程放在曲线和日志里。
-	summary_label.text = "流派：%s | 模式：%s | 结果：%s | 原因：%s | 耗时：%.1f | 生命：%.1f/%.1f | 伤害：%.1f | 承伤：%.1f | 技能：%s | 词缀：%s" % [
+	summary_label.text = "流派：%s | 模式：%s | 结果：%s | 原因：%s | 耗时：%.1f | 生命：%.1f/%.1f | 伤害：%.1f | 承伤：%.1f | 技能：%s | 道具随机加成：%s" % [
 		_display_strategy(result.get("strategy", "")),
 		_display_mode(result.get("mode", "")),
 		_display_bool(result.get("won", false)),
@@ -361,8 +410,8 @@ func _show_single_result(result: Dictionary) -> void:
 		float(result.get("player_max_hp", 0.0)),
 		float(result.get("total_damage", 0.0)),
 		float(result.get("damage_taken", 0.0)),
-		str(result.get("skill_casts", {})),
-		_format_affixes(result.get("affixes", []))
+		_format_skill_casts(result.get("skill_casts", {})),
+		_format_item_bonuses(result.get("affixes", []))
 	]
 	curve_label.text = _format_curve(result.get("damage_curve", []))
 	log_label.text = "\n".join(result.get("logs", []))
@@ -370,13 +419,15 @@ func _show_single_result(result: Dictionary) -> void:
 	_replay_single_result(result, replay_token)
 
 
-func _show_batch_result(batch: Dictionary) -> void:
+func _show_batch_result(batch: Dictionary, selected_run: int = -1) -> void:
 	replay_token += 1
 	_update_mode_info(batch.get("mode", ""))
 	var results: Array = batch.get("results", [])
-	var shown_run := results.size()
+	var shown_run: int = results.size()
+	var selected: int = shown_run if selected_run <= 0 else int(clamp(selected_run, 1, max(1, shown_run)))
+	_set_batch_replay_controls(not results.is_empty(), max(1, shown_run), selected)
 	# 批量模式不播放每场过程，重点是统计和逐场最终结果。
-	replay_status_text.text = "回放状态：批量模拟显示统计结果，不播放单局过程；生命条显示第 %d 场最终状态" % shown_run
+	replay_status_text.text = "回放状态：批量模拟显示统计结果，不播放单局过程；可选择 1-%d 场回放" % shown_run
 	summary_label.text = "批量模拟 | 流派：%s | 模式：%s | 次数：%d | 胜率：%.1f%% | 平均耗时：%.1f | 平均生命：%.1f | 平均伤害：%.1f | 已列出全部场次结果" % [
 		_display_strategy(batch.get("strategy", "")),
 		_display_mode(batch.get("mode", "")),
@@ -386,15 +437,57 @@ func _show_batch_result(batch: Dictionary) -> void:
 		float(batch.get("average_player_hp", 0.0)),
 		float(batch.get("average_total_damage", 0.0))
 	]
-	curve_label.text = "词缀统计：%s\n\n%s" % [_format_affix_counts(batch.get("affix_counts", {})), _format_batch_rows(batch)]
+	curve_label.text = "道具随机加成统计：%s\n\n%s" % [_format_item_bonus_counts(batch.get("affix_counts", {})), _format_batch_rows(batch)]
 	if not last_result.is_empty():
 		_update_bars(last_result)
 		# 完整展示所有场次日志会淹没信息，所以右侧只显示最后一场详细日志。
-		log_label.text = "当前详细日志：第 %d 场 / 共 %d 场。全部场次的最终结果见左侧表格。\n\n%s" % [
-			shown_run,
+		log_label.text = "当前详细日志：第 %d 场 / 共 %d 场。可修改“批量回放场次”并点击“播放场次”查看任意一场。\n\n%s" % [
+			selected,
 			shown_run,
 			"\n".join(last_result.get("logs", []))
 		]
+
+
+func _show_batch_replay_result(result: Dictionary, run_number: int, total_runs: int) -> void:
+	replay_token += 1
+	_update_mode_info(result.get("mode", ""))
+	_update_bars(result)
+	summary_label.text = "批量回放 | 第 %d / %d 场 | 流派：%s | 模式：%s | 结果：%s | 原因：%s | 耗时：%.1f | 生命：%.1f/%.1f | 伤害：%.1f | 承伤：%.1f | 技能：%s | 道具随机加成：%s" % [
+		run_number,
+		total_runs,
+		_display_strategy(result.get("strategy", "")),
+		_display_mode(result.get("mode", "")),
+		_display_bool(result.get("won", false)),
+		_display_reason(result.get("reason", "")),
+		float(result.get("elapsed", 0.0)),
+		float(result.get("player_hp", 0.0)),
+		float(result.get("player_max_hp", 0.0)),
+		float(result.get("total_damage", 0.0)),
+		float(result.get("damage_taken", 0.0)),
+		_format_skill_casts(result.get("skill_casts", {})),
+		_format_item_bonuses(result.get("affixes", []))
+	]
+	curve_label.text = _format_curve(result.get("damage_curve", []))
+	log_label.text = "批量模拟第 %d / %d 场详细日志：\n\n%s" % [
+		run_number,
+		total_runs,
+		"\n".join(result.get("logs", []))
+	]
+	_replay_single_result(result, replay_token)
+
+
+func _has_plain_batch_results() -> bool:
+	return not last_batch.is_empty() and not last_batch.has("type") and not last_batch.get("results", []).is_empty()
+
+
+func _set_batch_replay_controls(enabled: bool, max_run: int, selected_run: int) -> void:
+	var safe_max: int = max(1, max_run)
+	var safe_selected: int = clamp(selected_run, 1, safe_max)
+	batch_replay_spin.max_value = safe_max
+	batch_replay_spin.value = safe_selected
+	batch_replay_spin.editable = enabled
+	play_batch_button.disabled = not enabled
+	batch_summary_button.disabled = not enabled
 
 
 func _show_compare_result(crit: Dictionary, corrosion: Dictionary) -> void:
@@ -402,7 +495,7 @@ func _show_compare_result(crit: Dictionary, corrosion: Dictionary) -> void:
 	_update_mode_info(crit.get("mode", ""))
 	# 对比模式只展示统计结果，不播放单局动画，否则两套策略的过程会混在一起。
 	_set_compare_bars_state()
-	summary_label.text = "流派对比 | 模式：%s | 次数：%d\n暴击爆发流：胜率 %.1f%%，平均耗时 %.1f，平均生命 %.1f，平均伤害 %.1f\n腐蚀持续流：胜率 %.1f%%，平均耗时 %.1f，平均生命 %.1f，平均伤害 %.1f" % [
+	summary_label.text = "流派对比 | 模式：%s | 次数：%d\n暴击爆发流：胜率 %.1f%%，平均耗时 %.1f，平均生命 %.1f，平均伤害 %.1f\n情绪净化流：胜率 %.1f%%，平均耗时 %.1f，平均生命 %.1f，平均伤害 %.1f" % [
 		_display_mode(crit.get("mode", "")),
 		int(crit.get("runs", 0)),
 		float(crit.get("win_rate", 0.0)) * 100.0,
@@ -415,7 +508,7 @@ func _show_compare_result(crit: Dictionary, corrosion: Dictionary) -> void:
 		float(corrosion.get("average_total_damage", 0.0))
 	]
 	curve_label.text = "%s\n\n%s\n\n%s" % [_format_compare_table(crit, corrosion), _format_batch_rows(crit), _format_batch_rows(corrosion)]
-	log_label.text = "对比完成。可点击“导出结果”保存 JSON。\n词缀统计已在左侧“流派对比统计”中展示。"
+	log_label.text = "对比完成。可点击“导出结果”保存 JSON。\n道具随机加成统计已在左侧“流派对比统计”中展示。"
 
 
 func _set_compare_bars_state() -> void:
@@ -546,13 +639,13 @@ func _format_curve(curve: Array) -> String:
 
 func _format_batch_rows(batch: Dictionary) -> String:
 	var results: Array = batch.get("results", [])
-	# 批量表列出全部场次的最终结果，用于观察随机词缀和暴击导致的分布差异。
+	# 批量表列出全部场次的最终结果，用于观察道具随机加成和暴击导致的分布差异。
 	var lines: Array[String] = ["逐场结果 %s（%s，共 %d 场）" % [
 		_display_strategy(batch.get("strategy", "")),
 		_display_mode(batch.get("mode", "")),
 		results.size()
 	]]
-	lines.append("场次 | 种子 | 结果 | 原因 | 耗时 | 剩余生命 | 敌人进度 | 总伤害 | 承伤 | 词缀")
+	lines.append("场次 | 种子 | 结果 | 原因 | 耗时 | 剩余生命 | 敌人进度 | 总伤害 | 承伤 | 道具随机加成")
 	for i in results.size():
 		var result: Dictionary = results[i]
 		lines.append("%d | %s | %s | %s | %.1f | %.1f/%.1f | %d/%d | %.1f | %.1f | %s" % [
@@ -567,7 +660,7 @@ func _format_batch_rows(batch: Dictionary) -> String:
 			int(result.get("enemy_total", 0)),
 			float(result.get("total_damage", 0.0)),
 			float(result.get("damage_taken", 0.0)),
-			_format_affixes(result.get("affixes", []))
+			_format_item_bonuses(result.get("affixes", []))
 		])
 	return "\n".join(lines)
 
@@ -575,7 +668,7 @@ func _format_batch_rows(batch: Dictionary) -> String:
 func _format_compare_table(crit: Dictionary, corrosion: Dictionary) -> String:
 	# 对比面板使用纯数字表，避免早期文本柱状图中的 # 和 . 造成误解。
 	var lines: Array[String] = ["流派对比统计"]
-	lines.append("指标 | 暴击爆发流 | 腐蚀持续流")
+	lines.append("指标 | 暴击爆发流 | 情绪净化流")
 	lines.append("胜率 | %.1f%% | %.1f%%" % [
 		float(crit.get("win_rate", 0.0)) * 100.0,
 		float(corrosion.get("win_rate", 0.0)) * 100.0
@@ -592,34 +685,96 @@ func _format_compare_table(crit: Dictionary, corrosion: Dictionary) -> String:
 		float(crit.get("average_total_damage", 0.0)),
 		float(corrosion.get("average_total_damage", 0.0))
 	])
-	lines.append("暴击流词缀：%s" % _format_affix_counts(crit.get("affix_counts", {})))
-	lines.append("腐蚀流词缀：%s" % _format_affix_counts(corrosion.get("affix_counts", {})))
+	lines.append("暴击流随机加成统计：%s" % _format_item_bonus_counts(crit.get("affix_counts", {})))
+	lines.append("净化流随机加成统计：%s" % _format_item_bonus_counts(corrosion.get("affix_counts", {})))
 	return "\n".join(lines)
 
 
-func _format_affixes(affixes: Array) -> String:
-	if affixes.is_empty():
+func _format_item_bonuses(bonuses: Array) -> String:
+	if bonuses.is_empty():
 		return "无"
 	var names: Array[String] = []
-	for affix in affixes:
-		# affix 内部保存的是物品 id，展示时转成中文物品名。
-		names.append("%s：%s" % [
-			_display_item_id(affix.get("item", "")),
-			str(affix.get("name", ""))
+	for bonus in bonuses:
+		# 导出字段沿用 affix，但界面按“道具随机加成”解释，并展示具体属性效果。
+		names.append("%s获得%s（%s）" % [
+			_display_item_id(bonus.get("item", "")),
+			str(bonus.get("name", "")),
+			_format_modifiers(bonus.get("modifiers", {}))
 		])
 	return ", ".join(names)
 
 
-func _format_affix_counts(counts: Dictionary) -> String:
+func _format_skill_casts(skill_casts: Dictionary) -> String:
+	if skill_casts.is_empty():
+		return "无"
+	var parts: Array[String] = []
+	var keys := skill_casts.keys()
+	keys.sort()
+	for key in keys:
+		parts.append("%s %d 次" % [_display_skill_id(key), int(skill_casts[key])])
+	return "，".join(parts)
+
+
+func _format_item_bonus_counts(counts: Dictionary) -> String:
 	if counts.is_empty():
 		return "无"
 	var parts: Array[String] = []
 	var keys := counts.keys()
 	keys.sort()
 	for key in keys:
-		# 批量统计里保存的是词缀 id，展示时转成配置中的中文名。
-		parts.append("%s=%d" % [_display_affix_id(key), int(counts[key])])
+		# 批量统计里保存的是内部随机加成 id，展示时转成配置中的中文名。
+		parts.append("%s %d 次" % [_display_random_bonus_id(key), int(counts[key])])
 	return ", ".join(parts)
+
+
+func _format_modifiers(modifiers: Dictionary) -> String:
+	if modifiers.is_empty():
+		return "无属性变化"
+	var parts: Array[String] = []
+	var keys := modifiers.keys()
+	keys.sort()
+	for key in keys:
+		parts.append(_format_modifier(str(key), float(modifiers[key])))
+	return "，".join(parts)
+
+
+func _format_modifier(key: String, value: float) -> String:
+	match key:
+		"attack":
+			return "攻击 %s" % _format_signed_number(value)
+		"defense":
+			return "防御 %s" % _format_signed_number(value)
+		"max_hp":
+			return "最大生命 %s" % _format_signed_number(value)
+		"crit_chance":
+			return "暴击率 %s" % _format_signed_percent(value)
+		"crit_damage":
+			return "暴击伤害 %s" % _format_signed_percent(value)
+		"speed":
+			return "速度 %s" % _format_signed_number(value)
+		"energy_regen":
+			return "能量恢复 %s" % _format_signed_number(value)
+		"cooldown_multiplier":
+			if value < 0.0:
+				return "技能冷却缩短 %.0f%%" % (abs(value) * 100.0)
+			return "技能冷却延长 %.0f%%" % (value * 100.0)
+		"dot_multiplier":
+			return "持续净化伤害 %s" % _format_signed_percent(value)
+		_:
+			return "%s %s" % [key, _format_signed_number(value)]
+
+
+func _format_signed_number(value: float) -> String:
+	var sign := "+" if value >= 0.0 else ""
+	if is_equal_approx(value, round(value)):
+		return "%s%d" % [sign, int(round(value))]
+	return "%s%.1f" % [sign, value]
+
+
+func _format_signed_percent(value: float) -> String:
+	var percent := value * 100.0
+	var sign := "+" if percent >= 0.0 else ""
+	return "%s%.0f%%" % [sign, percent]
 
 
 func _display_item_id(item_id) -> String:
@@ -631,10 +786,19 @@ func _display_item_id(item_id) -> String:
 	return id
 
 
-func _display_affix_id(affix_id) -> String:
-	# 从配置中查中文词缀名；查不到时退回原 id，方便定位配置问题。
-	var id := str(affix_id)
-	for affix in config.get("affix_pool", []):
-		if str(affix.get("id", "")) == id:
-			return str(affix.get("name", id))
+func _display_skill_id(skill_id) -> String:
+	# 从配置中查中文技能名；查不到时退回原 id，方便定位配置问题。
+	var id := str(skill_id)
+	for skill in config.get("skills", []):
+		if str(skill.get("id", "")) == id:
+			return str(skill.get("name", id))
+	return id
+
+
+func _display_random_bonus_id(bonus_id) -> String:
+	# 从配置中查中文随机加成名；查不到时退回原 id，方便定位配置问题。
+	var id := str(bonus_id)
+	for bonus in config.get("affix_pool", []):
+		if str(bonus.get("id", "")) == id:
+			return str(bonus.get("name", id))
 	return id

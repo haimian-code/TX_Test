@@ -19,7 +19,7 @@ func choose_items(context: Dictionary) -> Array[String]
 func decide_action(context: Dictionary) -> Dictionary
 ```
 
-## allocate_attributes
+## allocate_attributes（属性分配 API）
 
 调用时机：战斗开始前。
 
@@ -44,6 +44,16 @@ func decide_action(context: Dictionary) -> Dictionary
 ```
 
 模拟器会校验总点数不超过 `points`，并忽略未知字段。
+
+当前属性点字段采用内部英文 key，方便代码和 JSON 稳定引用；界面和策划文档使用中文展示：
+
+| 中文属性 | 内部字段 |
+| --- | --- |
+| 攻击 | attack |
+| 防御 | defense |
+| 暴击 | crit |
+| 速度 | speed |
+| 最大生命 | max_hp |
 
 ## choose_items
 
@@ -133,9 +143,9 @@ res://scripts/strategies/crit_burst_strategy.gd
 
 行为：
 
-- 加点偏向 attack / crit / speed；
-- 启用剃刀透镜和战斗手册；
-- 优先释放裂创标记，其次迅捷斩，最后余烬绽放。
+- 加点偏向攻击 / 暴击 / 速度；
+- 启用专注透镜和复习手册；
+- 优先释放重点标注，其次快速翻检，最后情绪净化。
 
 ### CorrosionStrategy
 
@@ -147,9 +157,9 @@ res://scripts/strategies/corrosion_strategy.gd
 
 行为：
 
-- 加点偏向 attack / defense / max_hp；
-- 启用腐蚀瓶和战斗手册；
-- 优先保持余烬绽放，再用迅捷斩填充。
+- 加点偏向攻击 / 防御 / 最大生命；
+- 启用情绪中和剂和复习手册；
+- 优先保持情绪净化，再用快速翻检填充。
 
 ## 外部策略扩展方向
 

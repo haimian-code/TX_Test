@@ -29,6 +29,8 @@ func _run_flow() -> void:
 	_assert(float(ui.player_hp_bar.value) == 0.0, "initial player hp bar is empty")
 	_assert(float(ui.enemy_hp_bar.value) == 0.0, "initial enemy hp bar is empty")
 	_assert(not ui.curve_label.text.contains("流派对比统计"), "comparison is not precomputed")
+	_assert(ui.play_batch_button.disabled, "batch replay is disabled before batch run")
+	_assert(ui.batch_summary_button.disabled, "batch summary button is disabled before batch run")
 
 	# 未运行时导出应给出提示，而不是写空文件或崩溃。
 	ui._on_export_last()
@@ -40,6 +42,8 @@ func _run_flow() -> void:
 	await process_frame
 	_assert(not ui.last_result.is_empty(), "single run creates result")
 	_assert(ui.summary_label.text.contains("流派："), "single run summary is shown")
+	_assert(ui.summary_label.text.contains("快速翻检") or ui.summary_label.text.contains("重点标注") or ui.summary_label.text.contains("情绪净化"), "single run skill casts use Chinese names")
+	_assert(not ui.summary_label.text.contains("quick_slash"), "single run summary hides internal skill id")
 	_assert(ui.curve_label.text.contains("时间/回合"), "single run curve is shown")
 	_assert(ui.log_label.text.length() > 0, "single run log is shown")
 
@@ -53,23 +57,42 @@ func _run_flow() -> void:
 	_assert(ui.curve_label.text.contains("2 |"), "batch row 2 is shown")
 	_assert(ui.curve_label.text.contains("3 |"), "batch row 3 is shown")
 	_assert(ui.log_label.text.contains("当前详细日志：第 3 场 / 共 3 场"), "batch log identifies shown battle")
+	_assert(not ui.play_batch_button.disabled, "batch replay is enabled after batch run")
+	_assert(not ui.batch_summary_button.disabled, "batch summary button is enabled after batch run")
+	_assert(int(ui.batch_replay_spin.max_value) == 3, "batch replay max run is updated")
 	_assert(not ui.curve_label.text.contains("razor_lens"), "batch table uses Chinese item names")
-	_assert(not ui.curve_label.text.contains("sharp"), "batch table uses Chinese affix names")
+	_assert(not ui.curve_label.text.contains("sharp"), "batch table uses Chinese random bonus names")
+	_assert(ui.curve_label.text.contains("道具随机加成"), "batch table explains random item bonuses")
 
-	# 对比流程：验证统计表、中文词缀，以及早期文本柱状图的 # 和 . 不再出现。
+	ui.batch_replay_spin.value = 2
+	ui._on_play_batch_run()
+	await process_frame
+	_assert(ui.summary_label.text.contains("批量回放 | 第 2 / 3 场"), "selected batch run summary is shown")
+	_assert(not ui.summary_label.text.contains("quick_slash"), "selected batch replay hides internal skill id")
+	_assert(ui.log_label.text.contains("批量模拟第 2 / 3 场详细日志"), "selected batch run log is shown")
+	_assert(ui.curve_label.text.contains("时间/回合"), "selected batch run curve is shown")
+
+	ui._on_show_batch_summary()
+	await process_frame
+	_assert(ui.summary_label.text.contains("批量模拟 |"), "batch summary can be restored")
+	_assert(ui.curve_label.text.contains("逐场结果"), "batch table is restored")
+	_assert(int(ui.batch_replay_spin.value) == 2, "batch replay selected run is preserved")
+
+	# 对比流程：验证统计表、中文随机加成，以及早期文本柱状图的 # 和 . 不再出现。
 	ui._on_compare()
 	await process_frame
 	_assert(str(ui.last_batch.get("type", "")) == "comparison", "comparison batch is saved")
 	_assert(ui.curve_label.text.contains("流派对比统计"), "comparison table is shown")
-	_assert(ui.curve_label.text.contains("暴击流词缀"), "crit affixes are shown")
-	_assert(ui.curve_label.text.contains("腐蚀流词缀"), "corrosion affixes are shown")
+	_assert(ui.curve_label.text.contains("暴击流随机加成统计"), "crit random bonuses are shown")
+	_assert(ui.curve_label.text.contains("净化流随机加成统计"), "purification random bonuses are shown")
 	_assert(ui.player_hp_text.text.contains("对比模式不显示单局血量"), "comparison clears player hp display")
 	_assert(ui.enemy_hp_text.text.contains("对比模式不显示单局血量"), "comparison clears enemy hp display")
 	_assert(ui.enemy_progress_text.text.contains("对比模式显示统计结果"), "comparison explains progress display")
+	_assert(ui.play_batch_button.disabled, "plain batch replay is disabled during comparison")
 	_assert(not ui.curve_label.text.contains("###"), "comparison has no text bar hashes")
 	_assert(not ui.curve_label.text.contains("..."), "comparison has no text bar dots")
-	_assert(not ui.log_label.text.contains("暴击流词缀"), "comparison log does not repeat crit affixes")
-	_assert(not ui.log_label.text.contains("腐蚀流词缀"), "comparison log does not repeat corrosion affixes")
+	_assert(not ui.log_label.text.contains("暴击流随机加成统计"), "comparison log does not repeat crit random bonuses")
+	_assert(not ui.log_label.text.contains("净化流随机加成统计"), "comparison log does not repeat purification random bonuses")
 
 	# 对比后导出覆盖“last_batch 为 comparison 结构”的路径。
 	ui._on_export_last()

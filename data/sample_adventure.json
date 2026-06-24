@@ -2,13 +2,13 @@
   "schema_version": 1,
   "adventure": {
     "id": "ember_archive",
-    "name": "余烬档案馆",
-    "description": "玩家扮演遗迹清道夫，在被失控魔导记录污染的档案馆中验证不同战斗流派的稳定性。"
+    "name": "期末图书馆",
+    "description": "玩家扮演书籍清道夫，在被负面情绪污染的图书馆中验证不同清理流派的稳定性。"
   },
   "characters": [
     {
       "id": "warden",
-      "name": "档案清道夫",
+      "name": "书籍清道夫",
       "base_stats": {
         "max_hp": 120,
         "attack": 12,
@@ -27,7 +27,7 @@
   "skills": [
     {
       "id": "quick_slash",
-      "name": "迅捷斩",
+      "name": "快速翻检",
       "cooldown": 1.2,
       "cost": 8,
       "tags": ["direct", "fast"],
@@ -38,7 +38,7 @@
     },
     {
       "id": "rupture_mark",
-      "name": "裂创标记",
+      "name": "重点标注",
       "cooldown": 3.0,
       "cost": 14,
       "tags": ["direct", "crit"],
@@ -50,7 +50,7 @@
     },
     {
       "id": "ember_bloom",
-      "name": "余烬绽放",
+      "name": "情绪净化",
       "cooldown": 4.0,
       "cost": 18,
       "tags": ["dot", "aoe"],
@@ -66,33 +66,33 @@
   "items": [
     {
       "id": "razor_lens",
-      "name": "剃刀透镜",
-      "description": "提高暴击率，暴击流核心。",
+      "name": "专注透镜",
+      "description": "提高暴击率，暴击爆发流核心。",
       "modifiers": {
         "crit_chance": 0.12,
         "crit_damage": 0.25
       },
       "synergy": {
         "with": ["battle_manual"],
-        "description": "技能释放更频繁时，暴击收益被放大。"
+        "description": "复习节奏更紧凑时，暴击收益被放大。"
       }
     },
     {
       "id": "toxin_vial",
-      "name": "腐蚀瓶",
-      "description": "持续伤害额外提高，持续输出流核心。",
+      "name": "情绪中和剂",
+      "description": "持续净化伤害额外提高，情绪净化流核心。",
       "modifiers": {
         "dot_multiplier": 0.35
       },
       "synergy": {
         "with": ["battle_manual"],
-        "description": "冷却缩短使余烬绽放覆盖率提升。"
+        "description": "冷却缩短使情绪净化覆盖率提升。"
       }
     },
     {
       "id": "battle_manual",
-      "name": "战斗手册",
-      "description": "降低技能冷却并提高能量恢复，适合所有技能流。",
+      "name": "复习手册",
+      "description": "降低技能冷却并提高能量恢复，适合所有清理流派。",
       "modifiers": {
         "cooldown_multiplier": -0.12,
         "energy_regen": 2
@@ -102,7 +102,7 @@
   "affix_pool": [
     {
       "id": "sharp",
-      "name": "锋锐",
+      "name": "笔锋",
       "weight": 3,
       "modifiers": {
         "attack": 2
@@ -118,7 +118,7 @@
     },
     {
       "id": "overclocked",
-      "name": "过载",
+      "name": "冲刺",
       "weight": 2,
       "modifiers": {
         "cooldown_multiplier": -0.06,
@@ -127,7 +127,7 @@
     },
     {
       "id": "caustic",
-      "name": "蚀刻",
+      "name": "长效",
       "weight": 2,
       "modifiers": {
         "dot_multiplier": 0.18
@@ -146,7 +146,7 @@
   "monsters": [
     {
       "id": "paper_thrall",
-      "name": "纸页仆从",
+      "name": "焦虑书页",
       "max_hp": 65,
       "attack": 11,
       "defense": 1,
@@ -156,7 +156,7 @@
     },
     {
       "id": "ink_guardian",
-      "name": "墨痕守卫",
+      "name": "熬夜书堆",
       "max_hp": 180,
       "attack": 19,
       "defense": 5,
@@ -168,7 +168,7 @@
   "levels": [
     {
       "id": "archive_trial",
-      "name": "档案馆验证场",
+      "name": "期末图书馆清理区",
       "waves": [
         {
           "monster": "paper_thrall",

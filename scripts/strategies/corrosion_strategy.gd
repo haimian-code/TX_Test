@@ -2,7 +2,7 @@ class_name CorrosionStrategy
 extends "res://scripts/strategies/strategy_base.gd"
 
 
-# 腐蚀持续流：偏向持续伤害覆盖率和生存，胜利速度较慢但更稳定。
+# 情绪净化流：偏向持续伤害覆盖率和生存，胜利速度较慢但更稳定。
 func get_strategy_id() -> String:
 	return "corrosion"
 
@@ -27,7 +27,7 @@ func allocate_attributes(context: Dictionary) -> Dictionary:
 
 
 func choose_items(context: Dictionary) -> Array:
-	# 腐蚀瓶强化持续伤害，战斗手册缩短技能循环，配合余烬绽放维持覆盖率。
+	# 情绪中和剂强化持续伤害，复习手册缩短技能循环，配合情绪净化维持覆盖率。
 	return _filter_available_items(["toxin_vial", "battle_manual"], context.get("available_items", []))
 
 
@@ -36,7 +36,7 @@ func decide_action(context: Dictionary) -> Dictionary:
 	var effects: Array = context.get("active_effects", [])
 	var player: Dictionary = context.get("player", {})
 	var has_dot := false
-	# 先检查目标身上是否还有较长时间的余烬绽放效果，避免无脑重复施放浪费能量。
+	# 先检查目标身上是否还有较长时间的情绪净化效果，避免无脑重复施放浪费能量。
 	for effect in effects:
 		if str(effect.get("source_skill", "")) == "ember_bloom" and float(effect.get("remaining", 0.0)) > 1.0:
 			has_dot = true

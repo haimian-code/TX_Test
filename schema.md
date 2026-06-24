@@ -4,8 +4,6 @@
 
 - 易读，适合策划手写和 AI 生成；
 - Godot 原生支持解析；
-- 便于后续接 HTTP / JSON-RPC 外部策略；
-- 可以用 `schema_version` 做兼容升级。
 
 ## 顶层结构
 
@@ -27,7 +25,7 @@
 ```json
 {
   "id": "waden",
-  "name": "档案清道夫",
+  "name": "书籍清道夫",
   "base_stats": {
     "max_hp": 120,
     "attack": 12,
@@ -52,7 +50,7 @@
 | name | string | 显示名 |
 | base_stats | object | 基础属性 |
 | start_energy | number | 初始能量 |
-| attribute_points | int | 开局可分配点数 |
+| attribute_points | int | 开局可分配属性点 |
 | skills | string[] | 可用技能 ID |
 | items | string[] | 可用道具 ID |
 
@@ -61,7 +59,7 @@
 ```json
 {
   "id": "rupture_mark",
-  "name": "裂创标记",
+  "name": "重点标注",
   "cooldown": 3.0,
   "cost": 14,
   "tags": ["direct", "crit"],
@@ -85,7 +83,7 @@
 ```json
 {
   "id": "battle_manual",
-  "name": "战斗手册",
+  "name": "复习手册",
   "modifiers": {
     "cooldown_multiplier": -0.12,
     "energy_regen": 2
@@ -99,7 +97,7 @@
 | --- | --- |
 | attack | 直接增加攻击 |
 | defense | 直接增加防御 |
-| max_hp | 直接增加最大 HP |
+| max_hp | 直接增加最大生命 |
 | crit_chance | 增加暴击率 |
 | crit_damage | 增加暴击伤害倍率 |
 | speed | 增加速度 |
@@ -107,14 +105,14 @@
 | cooldown_multiplier | 技能冷却倍率修正，-0.12 表示冷却缩短 12% |
 | dot_multiplier | 持续伤害倍率修正，0.35 表示持续伤害提高 35% |
 
-## affix
+## item_random_bonus
 
-`affix_pool` 是可选字段。模拟器会为每局策略启用的每件道具 roll 一个词缀，并把词缀的 `modifiers` 叠加到角色属性上。
+`affix_pool` 是可选字段，含义是“道具随机加成池”。模拟器会为每局策略启用的每件道具随机抽取一个加成，并把该加成的 `modifiers` 叠加到角色属性上。字段名保留 `affix_pool` 是为了兼容现有导出和测试，界面中统一显示为“道具随机加成”。
 
 ```json
 {
   "id": "overclocked",
-  "name": "过载",
+  "name": "冲刺",
   "weight": 2,
   "modifiers": {
     "cooldown_multiplier": -0.06,
@@ -135,7 +133,7 @@
 ```json
 {
   "id": "paper_thrall",
-  "name": "纸页仆从",
+  "name": "焦虑书页",
   "max_hp": 55,
   "attack": 8,
   "defense": 1,
@@ -150,7 +148,7 @@
 ```json
 {
   "id": "archive_trial",
-  "name": "档案馆验证场",
+  "name": "期末图书馆清理区",
   "waves": [
     {
       "monster": "paper_thrall",

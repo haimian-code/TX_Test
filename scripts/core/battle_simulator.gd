@@ -104,7 +104,7 @@ func run_batch(strategy: RefCounted, mode: String, runs: int) -> Dictionary:
 	var safe_runs = max(1, runs)
 
 	for i in safe_runs:
-		# 每场使用不同 seed，让批量结果能体现随机词缀和暴击带来的波动。
+		# 每场使用不同 seed，让批量结果能体现道具随机加成和暴击带来的波动。
 		var result := run_once(strategy, mode, int(Time.get_unix_time_from_system()) + i * 7919 + rng.randi_range(1, 999999))
 		results.append(result)
 		if bool(result.get("won", false)):
@@ -238,7 +238,7 @@ func _build_player(character: Dictionary, level: Dictionary, strategy: RefCounte
 	})
 	chosen_items = _sanitize_items(chosen_items, available_items)
 	_apply_items(stats, chosen_items)
-	# 每件已选装备随机获得一个词缀，制造同一流派在批量模拟中的结果波动。
+	# 每件已选道具随机获得一个额外加成，制造同一流派在批量模拟中的结果波动。
 	var rolled_affixes := _roll_affixes(chosen_items)
 	_apply_affixes(stats, rolled_affixes)
 
@@ -304,7 +304,7 @@ func _roll_affixes(chosen_items: Array) -> Array:
 	if affix_pool.is_empty():
 		return result
 	for item_id in chosen_items:
-		# 当前规则：每件装备 roll 一个词缀；词缀效果稍后统一叠加到 stats。
+		# 当前规则：每件已选道具抽取一个随机加成；加成效果稍后统一叠加到 stats。
 		var affix := _weighted_random_affix()
 		if affix.is_empty():
 			continue
@@ -336,7 +336,7 @@ func _weighted_random_affix() -> Dictionary:
 func _apply_affixes(stats: Dictionary, rolled_affixes: Array) -> void:
 	for affix in rolled_affixes:
 		var modifiers: Dictionary = affix.get("modifiers", {})
-		# 词缀和道具使用同一套 modifier 叠加规则，便于扩展新属性。
+	# 道具随机加成和道具使用同一套 modifier 叠加规则，便于扩展新属性。
 		for key in modifiers.keys():
 			stats[key] = float(stats.get(key, 0.0)) + float(modifiers[key])
 
@@ -633,7 +633,7 @@ func _display_strategy(strategy_id: String) -> String:
 		"crit_burst":
 			return "暴击爆发流"
 		"corrosion":
-			return "腐蚀持续流"
+			return "情绪净化流"
 		_:
 			return strategy_id
 
