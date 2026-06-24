@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "adventure": {
+    "id": "ember_archive",
+    "name": "余烬档案馆",
+    "description": "玩家扮演遗迹清道夫，在被失控魔导记录污染的档案馆中验证不同战斗流派的稳定性。"
+  },
+  "characters": [
+    {
+      "id": "warden",
+      "name": "档案清道夫",
+      "base_stats": {
+        "max_hp": 120,
+        "attack": 12,
+        "defense": 3,
+        "crit_chance": 0.08,
+        "crit_damage": 1.8,
+        "speed": 10,
+        "energy_regen": 6
+      },
+      "start_energy": 20,
+      "attribute_points": 6,
+      "skills": ["quick_slash", "rupture_mark", "ember_bloom"],
+      "items": ["razor_lens", "toxin_vial", "battle_manual"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "quick_slash",
+      "name": "迅捷斩",
+      "cooldown": 1.2,
+      "cost": 8,
+      "tags": ["direct", "fast"],
+      "effect": {
+        "type": "damage",
+        "power": 1.0
+      }
+    },
+    {
+      "id": "rupture_mark",
+      "name": "裂创标记",
+      "cooldown": 3.0,
+      "cost": 14,
+      "tags": ["direct", "crit"],
+      "effect": {
+        "type": "damage",
+        "power": 1.85,
+        "bonus_crit_chance": 0.16
+      }
+    },
+    {
+      "id": "ember_bloom",
+      "name": "余烬绽放",
+      "cooldown": 4.0,
+      "cost": 18,
+      "tags": ["dot", "aoe"],
+      "effect": {
+        "type": "dot",
+        "power": 0.45,
+        "duration": 4.0,
+        "tick_interval": 1.0,
+        "stacks": 1
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "razor_lens",
+      "name": "剃刀透镜",
+      "description": "提高暴击率，暴击流核心。",
+      "modifiers": {
+        "crit_chance": 0.12,
+        "crit_damage": 0.25
+      },
+      "synergy": {
+        "with": ["battle_manual"],
+        "description": "技能释放更频繁时，暴击收益被放大。"
+      }
+    },
+    {
+      "id": "toxin_vial",
+      "name": "腐蚀瓶",
+      "description": "持续伤害额外提高，持续输出流核心。",
+      "modifiers": {
+        "dot_multiplier": 0.35
+      },
+      "synergy": {
+        "with": ["battle_manual"],
+        "description": "冷却缩短使余烬绽放覆盖率提升。"
+      }
+    },
+    {
+      "id": "battle_manual",
+      "name": "战斗手册",
+      "description": "降低技能冷却并提高能量恢复，适合所有技能流。",
+      "modifiers": {
+        "cooldown_multiplier": -0.12,
+        "energy_regen": 2
+      }
+    }
+  ],
+  "affix_pool": [
+    {
+      "id": "sharp",
+      "name": "锋锐",
+      "weight": 3,
+      "modifiers": {
+        "attack": 2
+      }
+    },
+    {
+      "id": "focused",
+      "name": "凝神",
+      "weight": 2,
+      "modifiers": {
+        "crit_chance": 0.05
+      }
+    },
+    {
+      "id": "overclocked",
+      "name": "过载",
+      "weight": 2,
+      "modifiers": {
+        "cooldown_multiplier": -0.06,
+        "energy_regen": 1
+      }
+    },
+    {
+      "id": "caustic",
+      "name": "蚀刻",
+      "weight": 2,
+      "modifiers": {
+        "dot_multiplier": 0.18
+      }
+    },
+    {
+      "id": "guarded",
+      "name": "稳固",
+      "weight": 2,
+      "modifiers": {
+        "max_hp": 10,
+        "defense": 1
+      }
+    }
+  ],
+  "monsters": [
+    {
+      "id": "paper_thrall",
+      "name": "纸页仆从",
+      "max_hp": 65,
+      "attack": 11,
+      "defense": 1,
+      "speed": 8,
+      "attack_interval": 1.4,
+      "count_as": "normal"
+    },
+    {
+      "id": "ink_guardian",
+      "name": "墨痕守卫",
+      "max_hp": 180,
+      "attack": 19,
+      "defense": 5,
+      "speed": 6,
+      "attack_interval": 1.9,
+      "count_as": "elite"
+    }
+  ],
+  "levels": [
+    {
+      "id": "archive_trial",
+      "name": "档案馆验证场",
+      "waves": [
+        {
+          "monster": "paper_thrall",
+          "count": 3
+        },
+        {
+          "monster": "ink_guardian",
+          "count": 1
+        },
+        {
+          "monster": "paper_thrall",
+          "count": 2
+        }
+      ]
+    }
+  ]
+}

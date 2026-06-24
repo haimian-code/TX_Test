@@ -1,0 +1,18 @@
+# Godot editor/import cache
+.godot/
+.import/
+*.import
+
+# Generated simulation exports
+exports/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.log
+
+# Local IDE settings
+.vscode/
+.idea/

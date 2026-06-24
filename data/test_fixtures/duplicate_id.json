@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "characters": [
+    {
+      "id": "tester",
+      "name": "Tester",
+      "base_stats": {
+        "max_hp": 100,
+        "attack": 10,
+        "defense": 1,
+        "crit_chance": 0,
+        "crit_damage": 1.5,
+        "speed": 10,
+        "energy_regen": 5
+      },
+      "start_energy": 10,
+      "attribute_points": 0,
+      "skills": [],
+      "items": []
+    }
+  ],
+  "skills": [],
+  "items": [],
+  "monsters": [
+    {
+      "id": "dummy",
+      "name": "Dummy A",
+      "max_hp": 10,
+      "attack": 1,
+      "defense": 0,
+      "speed": 1,
+      "attack_interval": 1
+    },
+    {
+      "id": "dummy",
+      "name": "Dummy B",
+      "max_hp": 10,
+      "attack": 1,
+      "defense": 0,
+      "speed": 1,
+      "attack_interval": 1
+    }
+  ],
+  "levels": [
+    {
+      "id": "level",
+      "name": "Level",
+      "waves": [
+        {
+          "monster": "dummy",
+          "count": 1
+        }
+      ]
+    }
+  ]
+}
